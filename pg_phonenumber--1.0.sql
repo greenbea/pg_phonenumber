@@ -6,31 +6,14 @@ CREATE TYPE phone;
 --
 --  Input and output functions.
 --
-CREATE OR REPLACE FUNCTION phonenumberin(cstring, oid, integer)
+CREATE OR REPLACE FUNCTION phone_in(cstring, oid, integer)
 RETURNS phone
-AS 'MODULE_PATHNAME', 'phonein'
+AS 'MODULE_PATHNAME', 'phone_in'
 LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
-CREATE OR REPLACE FUNCTION phonenumberout(phone)
+CREATE OR REPLACE FUNCTION phone_out(phone)
 RETURNS cstring
-AS 'MODULE_PATHNAME', 'phoneout'
-LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
-
-
-CREATE OR REPLACE FUNCTION phonenumbermodin(cstring[])
-RETURNS int
-AS 'MODULE_PATHNAME', 'phonemodin'
-LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
-
-CREATE OR REPLACE FUNCTION phonenumbermodout(int)
-RETURNS cstring
-AS 'MODULE_PATHNAME', 'phonemodout'
-LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
-
-
-CREATE OR REPLACE FUNCTION phone(phone, int)
-RETURNS phone
-AS 'MODULE_PATHNAME', 'phone_enforce_typmod'
+AS 'MODULE_PATHNAME', 'phone_out'
 LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
 --
@@ -38,31 +21,24 @@ LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 --
 
 CREATE TYPE phone (
-    INPUT          = phonenumberin,
-    OUTPUT         = phonenumberout,
-    TYPMOD_IN      = phonenumbermodin,
-    TYPMOD_OUT     = phonenumbermodout,
-    INTERNALLENGTH = 60,
+    INPUT          = phone_in,
+    OUTPUT         = phone_out,
+    INTERNALLENGTH = 16,
     STORAGE        = plain,
     CATEGORY       = 'S',
     PREFERRED      = false
 );
 
 --
---  Casts.
---
-CREATE CAST (phone as phone) WITH FUNCTION phone AS IMPLICIT;
-
---
 -- Operator Functions.
 --
 
-CREATE FUNCTION phonenumber_eq( phone, phone )
+CREATE FUNCTION phone_eq( phone, phone )
 RETURNS bool
 AS 'MODULE_PATHNAME'
 LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
 
-CREATE FUNCTION phonenumber_ne( phone, phone )
+CREATE FUNCTION phone_ne( phone, phone )
 RETURNS bool
 AS 'MODULE_PATHNAME'
 LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
@@ -76,7 +52,7 @@ CREATE OPERATOR = (
     RIGHTARG   = phone,
     COMMUTATOR = =,
     NEGATOR    = <>,
-    PROCEDURE  = phonenumber_eq,
+    PROCEDURE  = phone_eq,
     RESTRICT   = eqsel,
     JOIN       = eqjoinsel,
     HASHES = true,
@@ -88,7 +64,7 @@ CREATE OPERATOR <> (
     RIGHTARG    = phone,
     COMMUTATOR  = <>,
     NEGATOR     = =,
-    PROCEDURE   = phonenumber_ne,
+    PROCEDURE   = phone_ne,
     RESTRICT    = eqsel,
     JOIN        = eqjoinsel,
     HASHES      = true,
