@@ -8,6 +8,7 @@ extern "C" {
     #include "utils/array.h"
     #include "catalog/pg_type.h"
     #include "utils/guc.h"
+    #include "utils/builtins.h"
 }
 
 using namespace std;
@@ -77,7 +78,10 @@ extern "C" {
                 errcode(ERRCODE_INVALID_PARAMETER_VALUE), 
                 errmsg("%s '%s'", 
                     ErrorTypeStr[error].data(), arg));
-            PG_RETURN_NULL();
+        } else if (!phoneUtil->IsValidNumber(phoneNumber)) {
+            ereport(ERROR,
+                errcode(ERRCODE_INVALID_PARAMETER_VALUE), 
+                errmsg("Invalid number"));
         } else {
             char     *result;
             phoneUtil->Format(phoneNumber, PhoneNumberUtil::E164, &formattedNumber);
@@ -113,5 +117,39 @@ extern "C" {
         char   *arg2 = (char *)PG_GETARG_CSTRING(1);
 
         PG_RETURN_BOOL(strcasecmp(arg1, arg2));
+    }
+
+
+    PG_FUNCTION_INFO_V1(get_supported_regions);
+    Datum get_supported_regions(PG_FUNCTION_ARGS) {
+	    set<string> regions;
+        phoneUtil->GetSupportedRegions(&regions);
+        int region_count = regions.size();
+        Datum *region_datums = (Datum *) palloc(sizeof(Datum) * region_count);
+
+        int i = 0;
+        for (const auto &region : regions) {
+            region_datums[i++] = CStringGetTextDatum(region.data());
+        }
+
+        ArrayType *result_array = construct_array_builtin(region_datums, region_count, TEXTOID);
+        PG_RETURN_ARRAYTYPE_P(result_array);
+    }
+
+
+    PG_FUNCTION_INFO_V1(get_supported_calling_codes);
+    Datum get_supported_calling_codes(PG_FUNCTION_ARGS) {
+	    set<int> calling_codes;
+        phoneUtil->GetSupportedCallingCodes(&calling_codes);
+        int count = calling_codes.size();
+        Datum *datums = (Datum *) palloc(sizeof(Datum) * count);
+
+        int i = 0;
+        for (const auto &calling_code : calling_codes) {
+            datums[i++] = Int32GetDatum(calling_code);
+        }
+
+        ArrayType *result_array = construct_array_builtin(datums, count, INT4OID);
+        PG_RETURN_ARRAYTYPE_P(result_array);
     }
 };

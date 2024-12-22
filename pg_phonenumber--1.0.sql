@@ -70,3 +70,14 @@ CREATE OPERATOR <> (
     HASHES      = true,
     MERGES      = true
 );
+
+CREATE FUNCTION get_supported_regions()
+RETURNS TEXT[]
+AS 'MODULE_PATHNAME', 'get_supported_regions'
+LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
+
+
+CREATE FUNCTION get_supported_calling_codes()
+RETURNS INT[]
+AS 'MODULE_PATHNAME', 'get_supported_calling_codes'
+LANGUAGE C IMMUTABLE STRICT PARALLEL SAFE;
